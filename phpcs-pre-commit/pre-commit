@@ -6,8 +6,8 @@
 #
 # see the README
 
-PHPCS_BIN=/usr/bin/phpcs
-PHPCS_CODING_STANDARD=PEAR
+PHPCS_BIN=./vendor/squizlabs/php_codesniffer/scripts/phpcs
+PHPCS_CODING_STANDARD=PSR2
 PHPCS_IGNORE=
 TMP_STAGING=".tmp_staging"
 
@@ -103,8 +103,21 @@ do
   STAGED_FILES="$STAGED_FILES $TMP_STAGING/$FILE"
 done
 
-OUTPUT=$($PHPCS_BIN -s $IGNORE_WARNINGS --standard=$PHPCS_CODING_STANDARD $ENCODING $IGNORE $SNIFFS $STAGED_FILES)
 RETVAL=$?
+
+echo "Checking PHP Lint"
+for FILE in $STAGED_FILES
+do
+    php -l -d display_errors=1 $FILE
+    if [ $? != 0 ]
+    then
+        echo "Fix the error before commit."
+        RETVAL=1
+    fi
+done
+
+echo "Checking PHPCS"
+OUTPUT=$($PHPCS_BIN -s $IGNORE_WARNINGS --standard=$PHPCS_CODING_STANDARD $ENCODING $IGNORE $SNIFFS $STAGED_FILES)
 
 # delete temporary copy of staging area
 rm -rf $TMP_STAGING
